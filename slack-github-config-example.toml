@@ -1,0 +1,9 @@
+[slack]
+hook_url = "https://hooks.slack.com/services/ABC/123/asdfasdfasdf"
+username = "post-as-username"
+channel = "#post-to-channel"
+icon = ":github:"
+
+[github]
+token = "abc123abc123abc123abc123abc123"
+report_days_in_past = 14

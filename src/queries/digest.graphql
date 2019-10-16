@@ -1,0 +1,86 @@
+fragment repo on Repository {
+  name
+  url
+  isFork
+  primaryLanguage {
+    name
+  }
+}
+
+
+fragment pr on PullRequest {
+  number,
+  url
+}
+
+fragment issue on Issue {
+  number,
+  url
+}
+
+query FollowerDigest($from: DateTime!) {
+  viewer {
+    followers(first: 10) {
+      nodes {
+        name
+        login
+        contributionsCollection(from: $from) {
+          commitContributionsByRepository {
+            contributions(first: 10) {
+              totalCount
+            }
+            repository {
+              ...repo
+            }
+          }
+          issueContributionsByRepository {
+            contributions(first: 10) {
+              totalCount
+              nodes {
+                issue {
+                  ...issue
+                }
+              }
+            }
+            repository {
+              ...repo
+            }
+          }
+          pullRequestContributionsByRepository {
+            contributions(first: 10) {
+              totalCount
+              nodes {
+                pullRequest {
+                  ...pr
+                }
+              }
+            }
+            repository {
+              ...repo
+            }
+          }
+          pullRequestReviewContributionsByRepository {
+            contributions(first:10) {
+              totalCount
+              nodes {
+                pullRequest {
+                  ...pr
+                }
+              }
+            }
+            repository {
+              ...repo
+            }
+          }
+          repositoryContributions(first: 10) {
+            nodes {
+              repository {
+                ...repo
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
