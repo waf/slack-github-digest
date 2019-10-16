@@ -1,4 +1,4 @@
-# :octocat: Slack Github Digest
+# Slack Github Digest
 
 Post a digest of your GitHub followers' open-source contributions to slack! Written in Rust.
 
