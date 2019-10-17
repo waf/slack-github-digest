@@ -16,9 +16,9 @@ jobs:
       - name: Create Asset
         shell: pwsh
         run: |
-          mkdir release
-          cp slack-github-config-example.toml release/
-          cp target/release/slack-github-digest.exe release/
+          mkdir slack-github-digest
+          cp slack-github-config-example.toml slack-github-digest/
+          cp target/release/slack-github-digest.exe slack-github-digest/
           Compress-Archive -Path .\slack-github-digest -DestinationPath slack-github-digest
       - name: Create GitHub Release
         id: create_release
