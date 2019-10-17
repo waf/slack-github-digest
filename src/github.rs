@@ -1,7 +1,5 @@
-
 use failure::Error;
 use chrono::{Utc, Duration};
-use itertools::Itertools;
 use serde_derive::Deserialize;
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
