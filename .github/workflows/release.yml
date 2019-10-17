@@ -14,11 +14,12 @@ jobs:
       - name: Build
         run: cargo build --verbose --release
       - name: Create Asset
+        shell: pwsh
         run: |
           mkdir release
           cp slack-github-config-example.toml release/
           cp target/release/slack-github-digest.exe release/
-          zip slack-github-digest.zip release/
+          Compress-Archive -Path .\slack-github-digest -DestinationPath slack-github-digest
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1.0.0
