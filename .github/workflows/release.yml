@@ -7,18 +7,19 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v1
       - name: Build
         run: cargo build --verbose --release
       - name: Create Asset
+        shell: pwsh
         run: |
-          mkdir release
-          cp slack-github-config-example.toml release/
-          cp target/release/slack-github-digest.exe release/
-          zip slack-github-digest.zip release/
+          mkdir slack-github-digest
+          cp slack-github-config-example.toml slack-github-digest/
+          cp target/release/slack-github-digest.exe slack-github-digest/
+          Compress-Archive -Path .\slack-github-digest -DestinationPath slack-github-digest
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1.0.0
