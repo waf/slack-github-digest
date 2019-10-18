@@ -45,11 +45,6 @@ fn format_follower_accomplishments(follower: &follower_digest::FollowerDigestVie
     */
 
     let repository_contributions = &follower.contributions_collection.repository_contributions.nodes;
-    let commit_contributions = &follower.contributions_collection.commit_contributions_by_repository;
-    let issue_contributions = &follower.contributions_collection.issue_contributions_by_repository;
-    let pull_request_contributions = &follower.contributions_collection.pull_request_contributions_by_repository;
-    let review_contributions = &follower.contributions_collection.pull_request_review_contributions_by_repository;
-    
     let repos = if let Some(nodes) = repository_contributions {
         nodes.into_iter()
             .map(|r| map_repo(&r.as_ref().unwrap().repository.repo))
@@ -62,47 +57,11 @@ fn format_follower_accomplishments(follower: &follower_digest::FollowerDigestVie
         .into_iter()
         .partition(|r| r.is_fork);
 
-    let commits = commit_contributions
-        .into_iter()
-        .map(|c| Commit {
-            count: c.contributions.total_count,
-            repo: map_repo(&c.repository.repo)
-        })
-        .collect::<Vec<_>>();
+    let commits = map_commits(&follower.contributions_collection.commit_contributions_by_repository);
+    let issues = map_issues(&follower.contributions_collection.issue_contributions_by_repository);
 
-    let issues = issue_contributions
-        .into_iter()
-        .map(|i| RepoIssues {
-            issues: i.contributions.nodes.as_ref().unwrap_or(&vec![]).into_iter().map(|node| ContributionLink {
-                number: node.as_ref().unwrap().issue.issue.number,
-                url: node.as_ref().unwrap().issue.issue.url.to_owned()
-            }).collect::<Vec<_>>(),
-            repo: map_repo(&i.repository.repo)
-        })
-        .collect::<Vec<_>>();
-
-    let mut pull_requests = pull_request_contributions
-        .into_iter()
-        .map(|i| RepoPullRequests {
-            pull_requests: i.contributions.nodes.as_ref().unwrap_or(&vec![]).into_iter().map(|node| ContributionLink {
-                number: node.as_ref().unwrap().pull_request.pr.number,
-                url: node.as_ref().unwrap().pull_request.pr.url.to_owned()
-            }).collect::<Vec<_>>(),
-            repo: map_repo(&i.repository.repo)
-        })
-        .collect::<Vec<_>>();
-
-    let reviews = review_contributions
-        .into_iter()
-        .map(|i| RepoPullRequests {
-            pull_requests: i.contributions.nodes.as_ref().unwrap_or(&vec![]).into_iter().map(|node| ContributionLink {
-                number: node.as_ref().unwrap().pull_request.pr.number,
-                url: node.as_ref().unwrap().pull_request.pr.url.to_owned()
-            }).collect::<Vec<_>>(),
-            repo: map_repo(&i.repository.repo)
-        })
-        .collect::<Vec<_>>();
-
+    let mut pull_requests = map_pull_requests(&follower.contributions_collection.pull_request_contributions_by_repository);
+    let reviews = map_pull_request_reviews(&follower.contributions_collection.pull_request_review_contributions_by_repository);
     pull_requests.extend(reviews);
 
     ContributionSummary {
@@ -113,7 +72,55 @@ fn format_follower_accomplishments(follower: &follower_digest::FollowerDigestVie
         issues: issues,
         pull_requests: pull_requests,
     }
+}
 
+fn map_commits(commits: &std::vec::Vec<follower_digest::FollowerDigestViewerFollowersNodesContributionsCollectionCommitContributionsByRepository>) -> Vec<Commit> {
+    commits
+        .into_iter()
+        .map(|c| Commit {
+            count: c.contributions.total_count,
+            repo: map_repo(&c.repository.repo)
+        })
+        .collect::<Vec<_>>()
+}
+
+fn map_issues(issues: &std::vec::Vec<follower_digest::FollowerDigestViewerFollowersNodesContributionsCollectionIssueContributionsByRepository>) -> Vec<RepoIssues> {
+    issues
+        .into_iter()
+        .map(|i| RepoIssues {
+            issues: i.contributions.nodes.as_ref().unwrap_or(&vec![]).into_iter().map(|node| ContributionLink {
+                number: node.as_ref().unwrap().issue.issue.number,
+                url: node.as_ref().unwrap().issue.issue.url.to_owned()
+            }).collect::<Vec<_>>(),
+            repo: map_repo(&i.repository.repo)
+        })
+        .collect::<Vec<_>>()
+}
+
+fn map_pull_requests(pull_requests: &std::vec::Vec<follower_digest::FollowerDigestViewerFollowersNodesContributionsCollectionPullRequestContributionsByRepository>) -> Vec<RepoPullRequests> {
+    pull_requests
+        .into_iter()
+        .map(|i| RepoPullRequests {
+            pull_requests: i.contributions.nodes.as_ref().unwrap_or(&vec![]).into_iter().map(|node| ContributionLink {
+                number: node.as_ref().unwrap().pull_request.pr.number,
+                url: node.as_ref().unwrap().pull_request.pr.url.to_owned()
+            }).collect::<Vec<_>>(),
+            repo: map_repo(&i.repository.repo)
+        })
+        .collect::<Vec<_>>()
+}
+
+fn map_pull_request_reviews(reviews: &std::vec::Vec<follower_digest::FollowerDigestViewerFollowersNodesContributionsCollectionPullRequestReviewContributionsByRepository>) -> Vec<RepoPullRequests> {
+    reviews
+        .into_iter()
+        .map(|i| RepoPullRequests {
+            pull_requests: i.contributions.nodes.as_ref().unwrap_or(&vec![]).into_iter().map(|node| ContributionLink {
+                number: node.as_ref().unwrap().pull_request.pr.number,
+                url: node.as_ref().unwrap().pull_request.pr.url.to_owned()
+            }).collect::<Vec<_>>(),
+            repo: map_repo(&i.repository.repo)
+        })
+        .collect::<Vec<_>>()
 }
 
 fn map_repo(repo: &follower_digest::repo) -> Repo {
