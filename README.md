@@ -1,4 +1,5 @@
 # Slack Github Digest
+![](https://github.com/waf/slack-github-digest/workflows/Master%20Build/badge.svg)
 
 Post a digest of your GitHub followers' open-source contributions to slack! Written in Rust.
 
