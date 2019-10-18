@@ -47,6 +47,105 @@ fn build_message(contributions: &Vec<ContributionSummary>) -> String {
     )
 }
 
+fn build_contributions(contribution: &ContributionSummary) -> String {
+
+    let mut results = vec![];
+
+    if contribution.new_repos.len() > 0 {
+        results.push(build_repo_contributions(&contribution.new_repos));
+    }
+    if contribution.commits.len() > 0 {
+        results.push(build_commit_contributions(&contribution.commits));
+    }
+    if contribution.forked_repos.len() > 0 {
+        results.push(build_fork_contributions(&contribution.forked_repos));
+    }
+    if contribution.pull_requests.len() > 0 {
+        results.push(build_pull_request_contributions(&contribution.pull_requests));
+    }
+    if contribution.issues.len() > 0 {
+        results.push(build_issue_contributions(&contribution.issues));
+    }
+
+    if results.len() == 0 {
+        return "".to_owned();
+    }
+
+    format!("- {name} {contribution}.\n", name = contribution.name, contribution = results.join("; "))
+}
+
+fn build_repo_contributions(new_repos: &Vec<Repo>) -> String {
+    let mut new_repo_text = String::new();
+    let text = format!("created the repo{s} ", 
+        s = if new_repos.len() == 1 { "" } else { "s" }
+    );
+    new_repo_text.push_str(&text);
+    new_repo_text.push_str(&comma_separate_list(new_repos.iter().map(link_repo).collect()));
+    new_repo_text
+}
+
+fn build_commit_contributions(commits: &Vec<Commit>) -> String {
+    let mut commit_text = String::new();
+    commit_text.push_str("pushed commits to ");
+    commit_text.push_str(&comma_separate_list(
+        commits.iter()
+            .map(|c| link_repo(&c.repo))
+            .collect::<Vec<_>>()
+        )
+    );
+    commit_text
+}
+
+fn build_fork_contributions(forked_repos: &Vec<Repo>) -> String {
+    let mut fork_text = String::new();
+    let text = format!("forked the repo{s} ", 
+        s = if forked_repos.len() == 1 { "" } else { "s" }
+    );
+    fork_text.push_str(&text);
+    fork_text.push_str(&comma_separate_list(forked_repos.iter().map(link_repo).collect()));
+    fork_text
+}
+
+fn build_pull_request_contributions(pull_requests: &Vec<RepoPullRequests>) -> String {
+    let mut pr_text = String::new();
+    pr_text.push_str(&"contributed to PRs in ");
+    pr_text.push_str(&comma_separate_list(
+        pull_requests.iter()
+            .map(|c|
+                format!("{repo} ({prs})",
+                    repo = link_repo(&c.repo),
+                    prs = comma_separate_list(
+                        c.pull_requests.iter()
+                        .map(|pr| link(&pr.url, &format!("#{}", pr.number)))
+                        .collect()
+                    )
+                )
+            )
+            .collect()
+    ));
+    pr_text
+}
+
+fn build_issue_contributions(issues: &Vec<RepoIssues>) -> String {
+    let mut issue_text = String::new();
+    issue_text.push_str("helped out with issues in ");
+    issue_text.push_str(&comma_separate_list(
+        issues.iter()
+            .map(|c|
+                format!("{repo} ({issues})",
+                    repo = link_repo(&c.repo),
+                    issues = comma_separate_list(
+                        c.issues.iter()
+                        .map(|issue| link(&issue.url, &format!("#{}", issue.number)))
+                        .collect()
+                    )
+                )
+            )
+            .collect()
+    ));
+    issue_text
+}
+
 fn comma_separate_list(words: Vec<String>) -> String {
     let mut separated = String::new();
     if words.len() == 1 {
@@ -67,82 +166,15 @@ fn link_repo(repo: &Repo) -> String {
     link(&repo.url, &repo.name)
 }
 
-fn build_contributions(contribution: &ContributionSummary) -> String {
 
-    let mut results = vec![];
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    if contribution.new_repos.len() > 0 {
-        let mut new_repo_text = String::new();
-        let text = format!("created the repo{s} ", 
-            s = if contribution.new_repos.len() == 1 { "" } else { "s" }
-        );
-        new_repo_text.push_str(&text);
-        new_repo_text.push_str(&comma_separate_list(contribution.new_repos.iter().map(link_repo).collect()));
-        results.push(new_repo_text);
+    #[test]
+    fn test_comma_separate_list() {
+        assert_eq!(comma_separate_list(vec!["foo".to_owned()]), "foo");
+        assert_eq!(comma_separate_list(vec!["foo".to_owned(), "bar".to_owned()]), "foo and bar");
+        assert_eq!(comma_separate_list(vec!["foo".to_owned(), "bar".to_owned(), "baz".to_owned()]), "foo, bar and baz");
     }
-
-    if contribution.commits.len() > 0 {
-        let mut commit_text = String::new();
-        commit_text.push_str("pushed commits to ");
-        commit_text.push_str(&comma_separate_list(
-            contribution.commits.iter()
-                .map(|c| link_repo(&c.repo))
-                .collect::<Vec<_>>()
-            )
-        );
-        results.push(commit_text);
-    }
-    if contribution.forked_repos.len() > 0 {
-        let mut fork_text = String::new();
-        let text = format!("forked the repo{s} ", 
-            s = if contribution.forked_repos.len() == 1 { "" } else { "s" }
-        );
-        fork_text.push_str(&text);
-        fork_text.push_str(&comma_separate_list(contribution.forked_repos.iter().map(link_repo).collect()));
-        results.push(fork_text);
-    }
-    if contribution.pull_requests.len() > 0 {
-        let mut pr_text = String::new();
-        pr_text.push_str(&"contributed to PRs in ");
-        pr_text.push_str(&comma_separate_list(
-            contribution.pull_requests.iter()
-                .map(|c|
-                    format!("{repo} ({prs})",
-                        repo = link_repo(&c.repo),
-                        prs = comma_separate_list(
-                            c.pull_requests.iter()
-                            .map(|pr| link(&pr.url, &format!("#{}", pr.number)))
-                            .collect()
-                        )
-                    )
-                )
-                .collect()
-        ));
-        results.push(pr_text);
-    }
-    if contribution.issues.len() > 0 {
-        let mut issue_text = String::new();
-        issue_text.push_str("helped out with issues in ");
-        issue_text.push_str(&comma_separate_list(
-            contribution.issues.iter()
-                .map(|c|
-                    format!("{repo} ({issues})",
-                        repo = link_repo(&c.repo),
-                        issues = comma_separate_list(
-                            c.issues.iter()
-                            .map(|issue| link(&issue.url, &format!("#{}", issue.number)))
-                            .collect()
-                        )
-                    )
-                )
-                .collect()
-        ));
-        results.push(issue_text);
-    }
-
-    if results.len() == 0 {
-        return "".to_owned();
-    }
-
-    format!("- {name} {contribution}.\n", name = contribution.name, contribution = results.join("; "))
 }
