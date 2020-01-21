@@ -64,8 +64,14 @@ fn format_follower_accomplishments(follower: &follower_digest::FollowerDigestVie
     let reviews = map_pull_request_reviews(&follower.contributions_collection.pull_request_review_contributions_by_repository);
     pull_requests.extend(reviews);
 
+    let name = if let Some(full_name) = &follower.name {
+        full_name
+    } else {
+        &follower.login
+    };
+
     ContributionSummary {
-        name: follower.name.as_ref().expect("no name").to_owned(),
+        name: name.to_owned(),
         new_repos: new_repos,
         forked_repos: forked_repos,
         commits: commits,
