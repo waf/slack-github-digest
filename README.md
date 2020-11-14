@@ -6,8 +6,8 @@ Post a digest of your GitHub followers' open-source contributions to slack! Writ
 *Current Status: works, but not much testing has been done. Needs error handling and code organization!*
 
 1. Generate a GitHub access token with read-only permissions on public repos.
-  - `public_repo`
-  - Optionally, `read:discussion` seems to be required in certain organization setups
+    - `public_repo`
+    - Optionally, `read:discussion` seems to be required in certain organization setups
 1. Generate a Slack "Incoming Webhook" url.
 1. Copy the example file `slack-github-config-example.toml` to `slack-github-config.toml`. Add both the GitHub Access Token and the Slack webhook URL to this file.
 1. `cargo run`
