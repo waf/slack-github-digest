@@ -4,7 +4,7 @@ use serde_derive::Deserialize;
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 
-pub fn query_contributions(config: &GitHubConfig) -> Result<Vec<ContributionSummary>, Error> {
+pub async fn query_contributions(config: &GitHubConfig) -> Result<Vec<ContributionSummary>, Error> {
 
     let start_date : DateTime = (Utc::now() + Duration::days(-1 * config.report_days_in_past))
         .format("%Y-%m-%dT00:00:00")
@@ -14,17 +14,19 @@ pub fn query_contributions(config: &GitHubConfig) -> Result<Vec<ContributionSumm
         from: start_date
     });
 
-    let client = reqwest::Client::new();
-    let mut response = client
+    let http_request = reqwest::Client::new()
         .post("https://api.github.com/graphql")
-        .bearer_auth(&config.token)
         .json(&query)
-        .send()?;
-    
-    let json: Response<follower_digest::ResponseData> = response.json()?;
-    println!("{:#?}", json);
+        .header("User-Agent", "Slack GitHub Digest https://github.com/waf/slack-github-digest")
+        .bearer_auth(&config.token);
 
-    let followers = json.data
+    let http_response = http_request.send().await?;
+
+    let response = http_response.json::<Response<follower_digest::ResponseData>>().await?;
+
+    println!("{:#?}", &response);
+
+    let followers = response.data
         .expect("missing data")
         .viewer
         .followers
@@ -48,14 +50,11 @@ fn format_follower_accomplishments(follower: &follower_digest::FollowerDigestVie
     let repos = if let Some(nodes) = repository_contributions {
         nodes.into_iter()
             .map(|r| map_repo(&r.as_ref().unwrap().repository.repo))
+            .filter(|r| !r.is_fork)
             .collect::<Vec<_>>()
     } else {
         vec![]
     };
-
-    let (forked_repos, new_repos) = repos
-        .into_iter()
-        .partition(|r| r.is_fork);
 
     let commits = map_commits(&follower.contributions_collection.commit_contributions_by_repository);
     let issues = map_issues(&follower.contributions_collection.issue_contributions_by_repository);
@@ -72,8 +71,7 @@ fn format_follower_accomplishments(follower: &follower_digest::FollowerDigestVie
 
     ContributionSummary {
         name: name.to_owned(),
-        new_repos: new_repos,
-        forked_repos: forked_repos,
+        new_repos: repos,
         commits: commits,
         issues: issues,
         pull_requests: pull_requests,
@@ -162,7 +160,6 @@ pub struct ContributionSummary
 {
     pub name: String,
     pub new_repos: Vec<Repo>,
-    pub forked_repos: Vec<Repo>,
     pub commits: Vec<Commit>,
     pub issues: Vec<RepoIssues>,
     pub pull_requests: Vec<RepoPullRequests>

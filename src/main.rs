@@ -11,11 +11,13 @@ struct Config {
     slack: slack::SlackConfig,
 }
 
-fn main() -> Result<(), Error> {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     let config = read_config_file("slack-github-config.toml")?;
-    let contributions = github::query_contributions(&config.github)?;
+    let contributions = github::query_contributions(&config.github).await?;
+    slack::send_contribution_message(&config.slack, &contributions).await?;
 
-    slack::send_contribution_message(&config.slack, &contributions)
+    Ok(())
 }
 
 fn read_config_file(filename: &str) -> Result<Config, Error> {

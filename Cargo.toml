@@ -13,6 +13,7 @@ serde_json = "^1.0"
 serde_derive = "^1.0"
 toml = "0.5"
 chrono = "0.4"
-reqwest = "0.9.22"
+reqwest = { version = "0.10.8", features = ["json", "gzip"] }
+tokio = { version = "0.2", features = ["full"] }
 failure = "0.1.5"
 itertools = "0.8.0"

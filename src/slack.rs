@@ -13,7 +13,7 @@ pub struct SlackConfig {
     pub icon: String
 }
 
-pub fn send_contribution_message(config: &SlackConfig, contributions: &Vec<ContributionSummary>) -> Result<(), Error> {
+pub async fn send_contribution_message(config: &SlackConfig, contributions: &Vec<ContributionSummary>) -> Result<(), Error> {
 
     let message = build_message(contributions);
 
@@ -24,11 +24,14 @@ pub fn send_contribution_message(config: &SlackConfig, contributions: &Vec<Contr
     json_message.insert("icon_emoji", &config.icon);
     json_message.insert("unfurl_links", "false");
 
+    print!("{}", message);
+
     let client = reqwest::Client::new();
     client.post(&config.hook_url)
         .json(&json_message)
-        .send()?;
-    
+        .send()
+        .await?;
+
     Ok(())
 }
 
@@ -56,9 +59,6 @@ fn build_contributions(contribution: &ContributionSummary) -> String {
     }
     if contribution.commits.len() > 0 {
         results.push(build_commit_contributions(&contribution.commits));
-    }
-    if contribution.forked_repos.len() > 0 {
-        results.push(build_fork_contributions(&contribution.forked_repos));
     }
     if contribution.pull_requests.len() > 0 {
         results.push(build_pull_request_contributions(&contribution.pull_requests));
@@ -94,16 +94,6 @@ fn build_commit_contributions(commits: &Vec<Commit>) -> String {
         )
     );
     commit_text
-}
-
-fn build_fork_contributions(forked_repos: &Vec<Repo>) -> String {
-    let mut fork_text = String::new();
-    let text = format!("forked the repo{s} ", 
-        s = if forked_repos.len() == 1 { "" } else { "s" }
-    );
-    fork_text.push_str(&text);
-    fork_text.push_str(&comma_separate_list(forked_repos.iter().map(link_repo).collect()));
-    fork_text
 }
 
 fn build_pull_request_contributions(pull_requests: &Vec<RepoPullRequests>) -> String {
